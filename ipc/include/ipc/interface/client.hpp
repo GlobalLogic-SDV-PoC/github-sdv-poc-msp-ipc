@@ -21,6 +21,7 @@ public:
     virtual void subscribe(const std::string& topic) = 0;
     virtual void unsubscribe(const std::string& topic) = 0;
     virtual void forward_payload(const std::string& topic, const std::string& payload) = 0;
+    virtual void notify_shutdown(const std::string& client_name) = 0;
     virtual void shutdown() = 0;
     virtual ~IClient() = 0;
 };
