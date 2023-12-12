@@ -17,6 +17,7 @@ public:
     void subscribe(const std::string& topic) override;
     void unsubscribe(const std::string& topic) override;
     void forward_payload(const std::string& topic, const std::string& payload) override;
+    void notify_shutdown(const std::string& client_name) override;
     void shutdown() override;
 
 protected:

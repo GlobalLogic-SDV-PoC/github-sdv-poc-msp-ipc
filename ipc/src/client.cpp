@@ -31,6 +31,15 @@ void Client::notify_existance()
     req->topic = m_receiver->get_topic_name();
     send_packet(std::move(req));
 }
+void Client::notify_shutdown(const std::string& client_name)
+{
+    std::scoped_lock lock(m_mutex);
+    auto req = std::make_shared<ipc_packet::srv::Packet_Request>();
+    req->type = ipc_packet::srv::Packet_Request::GOODBYE_TYPE;
+    req->topic = client_name;
+    send_packet(std::move(req));
+}
+
 void Client::send_packet(ipc_packet::srv::Packet_Request::SharedPtr request)
 {
     std::scoped_lock lock(m_mutex);
@@ -71,6 +80,7 @@ void Client::subscribe(const std::string& topic)
     auto req = std::make_shared<ipc_packet::srv::Packet_Request>();
     req->type = ipc_packet::srv::Packet_Request::SUBSCRIBE_TYPE;
     req->topic = topic;
+    req->payload = m_receiver->get_topic_name();
     send_packet(std::move(req));
 }
 void Client::unsubscribe(const std::string& topic)
@@ -78,6 +88,7 @@ void Client::unsubscribe(const std::string& topic)
     auto req = std::make_shared<ipc_packet::srv::Packet_Request>();
     req->type = ipc_packet::srv::Packet_Request::UNSUBSCRIBE_TYPE;
     req->topic = topic;
+    req->payload = m_receiver->get_topic_name();
     send_packet(std::move(req));
 }
 void Client::forward_payload(const std::string& topic, const std::string& payload)
