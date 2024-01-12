@@ -12,7 +12,6 @@ void Client::connect(const std::string& server_address,
                      const OnReceiveHandler& on_receive_handler,
                      const std::function<void()>& on_connect_handler)
 {
-    std::scoped_lock lock(m_mutex);
     assert(on_receive_handler);
     assert(on_connect_handler);
     m_on_receive_handler = on_receive_handler;
@@ -25,7 +24,6 @@ void Client::connect(const std::string& server_address,
 
 void Client::notify_existance()
 {
-    std::scoped_lock lock(m_mutex);
     auto req = std::make_shared<ipc_packet::srv::Packet_Request>();
     req->type = ipc_packet::srv::Packet_Request::HELLO_TYPE;
     req->topic = m_receiver->get_topic_name();
@@ -33,7 +31,6 @@ void Client::notify_existance()
 }
 void Client::notify_shutdown(const std::string& client_name)
 {
-    std::scoped_lock lock(m_mutex);
     auto req = std::make_shared<ipc_packet::srv::Packet_Request>();
     req->type = ipc_packet::srv::Packet_Request::GOODBYE_TYPE;
     req->topic = client_name;
@@ -42,7 +39,6 @@ void Client::notify_shutdown(const std::string& client_name)
 
 void Client::send_packet(ipc_packet::srv::Packet_Request::SharedPtr request)
 {
-    std::scoped_lock lock(m_mutex);
     if (!m_request_sender->service_is_ready())
     {
         while (!m_request_sender->wait_for_service(std::chrono::seconds(2)))
@@ -59,18 +55,13 @@ void Client::send_packet(ipc_packet::srv::Packet_Request::SharedPtr request)
     }
 
     auto fut = m_request_sender->async_send_request(request);
-    if (rclcpp::spin_until_future_complete(shared_from_this(), fut, std::chrono::seconds(2)) != rclcpp::FutureReturnCode::SUCCESS)
+    if (rclcpp::spin_until_future_complete(shared_from_this(), fut, std::chrono::seconds(5)) != rclcpp::FutureReturnCode::SUCCESS)
     {
         m_request_sender->remove_pending_request(fut);
-        RCLCPP_INFO(get_logger(), "Send message timeout");
+        RCLCPP_INFO(get_logger(), "Send message timeout. Ros spin_future is incomplete");
     }
     else
     {
-        if (fut.wait_for(std::chrono::seconds(1)) != std::future_status::ready)
-        {
-            RCLCPP_INFO(get_logger(), "Send message timeout");
-            return;
-        }
         const auto resp = fut.get();
         RCLCPP_INFO(get_logger(), "Received response %d", resp->status_code);
     }
@@ -101,7 +92,6 @@ void Client::forward_payload(const std::string& topic, const std::string& payloa
 }
 void Client::shutdown()
 {
-    std::scoped_lock lock(m_mutex);
     m_receiver.reset();
     m_request_sender.reset();
 }
