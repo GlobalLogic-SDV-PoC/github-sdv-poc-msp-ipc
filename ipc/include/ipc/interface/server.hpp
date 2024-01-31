@@ -15,7 +15,10 @@ public:
     using OnReceiveHandler = std::function<void(RequestSharedPtr, ResponseSharedPtr)>;
 
 public:
-    virtual void start(const std::string& address, const OnReceiveHandler& on_receive_handlerr) = 0;
+    virtual void start(const rclcpp::Node::SharedPtr& node,
+                       const std::string& address,
+                       const OnReceiveHandler& on_receive_handlerr)
+        = 0;
     virtual void shutdown() = 0;
     virtual ~IServer() = 0;
 };
